@@ -1,7 +1,7 @@
 package AI::NeuralNet::Kohonen::Demo::RGB;
 
 use vars qw/$VERSION/;
-$VERSION = 0.12;	# 13 March 2003
+$VERSION = 0.121;	# 13 March 2003
 
 =head1 NAME
 

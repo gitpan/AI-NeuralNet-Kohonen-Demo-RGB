@@ -5,7 +5,7 @@ WriteMakefile(
     'NAME'		=> 'AI::NeuralNet::Kohonen::Demo::RGB',
     'VERSION_FROM'	=> 'RGB.pm', # finds $VERSION
     'PREREQ_PM'		=> {
-		AI::NeuralNet::Kohonen	=> 0.1,
+		AI::NeuralNet::Kohonen	=> 0.11,
 		Tk						=> 0.1,
 		Tk::Canvas				=> 0.1,
 		Tk::Label				=> 0.1,
