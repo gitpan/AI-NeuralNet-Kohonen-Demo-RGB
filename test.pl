@@ -38,6 +38,27 @@ ok( $_->{weight_dim}, 2);
 
 $_->train;
 
+
+$_ = AI::NeuralNet::Kohonen::Demo::RGB->new(
+	display_scale => 10,
+	display	=> 'hex',
+	map_dim	=> 39,
+	epochs => 9,
+	table=>
+"R G B
+1 0 0
+0 1 0
+0 0 1
+",
+);
+ok( ref $_->{input}, 'ARRAY');
+ok( $_->{input}->[0]->[0],1);
+ok( $_->{input}->[0]->[1],0);
+ok( $_->{input}->[0]->[2],0);
+ok( $_->{weight_dim}, 2);
+
+$_->train;
+
 ok(1,1);
 
 __END__

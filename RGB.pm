@@ -1,7 +1,7 @@
 package AI::NeuralNet::Kohonen::Demo::RGB;
 
 use vars qw/$VERSION/;
-$VERSION = 0.11;
+$VERSION = 0.12;	# 13 March 2003
 
 =head1 NAME
 
@@ -11,6 +11,8 @@ AI::NeuralNet::Kohonen::Demo::RGB - Colour-based demo
 
 	use AI::NeuralNet::Kohonen::Demo::RGB;
 	$_ = AI::NeuralNet::Kohonen::Demo::RGB->new(
+		display_scale => 20,
+		display	=> 'hex',
 		map_dim	=> 39,
 		epochs  => 9,
 		table   => "R G B"
@@ -25,9 +27,15 @@ AI::NeuralNet::Kohonen::Demo::RGB - Colour-based demo
 =head1 DESCRIPTION
 
 A sub-class of C<AI::NeuralNet::Kohonen>
-that Impliments extra methods for make use of TK
-in a very slow demonstration of how a SOM can classify
-RGB colours. See L<SYNOPSIS>.
+that impliments extra methods to make use of TK
+in a very slow demonstration of how a SOM can collapse
+a three dimensional space (RGB colour values) into a
+two dimensional space (the display). See L<SYNOPSIS>.
+
+The only things added are two new fields to supply to the
+constructor - set C<display> to C<hex> for display as
+a unified distance matrix, rather than plain grid; set
+C<display_scale> for the size of the display.
 
 =cut
 
@@ -46,73 +54,114 @@ use Tk qw/DoOneEvent DONT_WAIT/;
 # Used only by &tk_train
 #
 sub tk_show { my $self=shift;
-	for my $x (0..$self->{map_dim}){
-		for my $y (0..$self->{map_dim}){
+	for my $x (0..$self->{map_dim_x}){
+		for my $y (0..$self->{map_dim_y}){
 			my $colour = sprintf("#%02x%02x%02x",
 				(int (255 * $self->{map}->[$x]->[$y]->{weight}->[0])),
 				(int (255 * $self->{map}->[$x]->[$y]->{weight}->[1])),
 				(int (255 * $self->{map}->[$x]->[$y]->{weight}->[2])),
 			);
-			$self->{c}->create(
-				rectangle	=> [
-					(1+$x)*$self->{display_scale} ,
-					(1+$y)*$self->{display_scale} ,
-					(1+$x)*($self->{display_scale})+$self->{display_scale} ,
-					(1+$y)*($self->{display_scale})+$self->{display_scale}
-				],
-				-outline	=> "black",
-				-fill 		=> $colour,
-			);
+			if ($self->{display} and $self->{display} eq 'hex'){
+				my $xo = ($y % 2) * ($self->{display_scale}/2);
+				my $yo = 0;
+
+				$self->{c}->create(
+					polygon	=> [
+						$xo + ((1+$x)*$self->{display_scale} ),
+						$yo + ((1+$y)*$self->{display_scale} ),
+
+						# polygon only:
+						$xo + ((1+$x)*($self->{display_scale})+($self->{display_scale}/2) ),
+						$yo + ((1+$y)*($self->{display_scale})-($self->{display_scale}/2) ),
+						#
+
+						$xo + ((1+$x)*($self->{display_scale})+$self->{display_scale} ),
+						$yo + ((1+$y)*$self->{display_scale} ),
+
+						$xo + ((1+$x)*($self->{display_scale})+$self->{display_scale} ),
+						$yo + ((1+$y)*($self->{display_scale})+($self->{display_scale}/2) ),
+
+						# Polygon only:
+						$xo + ((1+$x)*($self->{display_scale})+($self->{display_scale}/2) ),
+						$yo + ((1+$y)*($self->{display_scale})+($self->{display_scale}) ),
+						#
+
+						$xo + ((1+$x)*$self->{display_scale} ),
+						$yo + ((1+$y)*($self->{display_scale})+($self->{display_scale}/2) ),
+
+					],
+					-outline	=> "black",
+					-fill 		=> $colour,
+				);
+			}
+			else {
+				$self->{c}->create(
+					rectangle	=> [
+						(1+$x)*$self->{display_scale} ,
+						(1+$y)*$self->{display_scale} ,
+						(1+$x)*($self->{display_scale})+$self->{display_scale} ,
+						(1+$y)*($self->{display_scale})+$self->{display_scale}
+					],
+					-outline	=> "black",
+					-fill 		=> $colour,
+				);
+			}
 		}
 	}
 	return 1;
 }
 
 
-#
-# As &train, but with a real-time TK display.
-#
-sub train { my ($self,$epochs) = (shift,shift);
-	my $bmu_text;
-	$epochs = $self->{epochs} unless defined $epochs;
+=head1 METHOD train
 
-	$self->{display_scale} = 10;
-	my $size = $self->{map_dim} * $self->{display_scale};
+Over-rides the base class to provide TK displays of the map
+
+=cut
+
+sub train { my ($self,$epochs) = (shift,shift);
+	my $label_txt;
+
+	$epochs = $self->{epochs} unless defined $epochs;
+	$self->{display_scale} = 10 if not defined 	$self->{display_scale};
+
 	$self->{mw} = MainWindow->new(
-		-width	=> ($size+200),
-		-height	=> ($size+200),
+		-width	=> 200+($self->{map_dim_x} * $self->{display_scale}),
+		-height	=> 200+($self->{map_dim_y} * $self->{display_scale}),
 	);
     my $quit_flag = 0;
     my $quit_code = sub {$quit_flag = 1};
     $self->{mw}->protocol('WM_DELETE_WINDOW' => $quit_code);
 
 	$self->{c} = $self->{mw}->Canvas(
-		-width	=> $size+100,
-		-height	=> $size+100,
+		-width	=> 50+($self->{map_dim_x} * $self->{display_scale}),
+		-height	=> 50+($self->{map_dim_y} * $self->{display_scale}),
+		-relief	=> 'ridge',
+		-border => 5,
 	);
-	$self->{c}->pack();
-	# Labels
-	my $e = $self->{mw}->Label(-text => 'Epoch:');
-	$e->pack(-side=>'left');
-	my $l = $self->{mw}->Label(-text => '0',-textvariable=>\$self->{t});
+	$self->{c}->pack(-side=>'top');
+
+	my $l = $self->{mw}->Label(-text => ' ',-textvariable=>\$label_txt);
 	$l->pack(-side=>'left');
-	my $b = $self->{mw}->Label(-text => '   BMU:');
-	$b->pack(-side=>'left');
-	my $bl = $self->{mw}->Label(-text => '0',-textvariable=>\$bmu_text);
-	$bl->pack(-side=>'left');
+
 	# Replaces Tk's MainLoop
     for (0..$self->{epochs}) {
 		if ($quit_flag) {
 			$self->{mw}->destroy;
 			return;
 		}
-		$self->{t}++;
+		$self->{t}++;				# Measure epoch
 		my $target = $self->_select_target;
-		my $bmu = $self->_find_bmu($target);
-		$bmu_text = $bmu->[1].",".$bmu->[2];
+		my $bmu = $self->find_bmu($target);
+
 		$self->_adjust_neighbours_of($bmu,$target);
 		$self->_decay_learning_rate;
+
 		$self->tk_show;
+		$label_txt = sprintf("Epoch: %04d",$self->{t})."  "
+		. "Learning: $self->{l}  "
+		. sprintf("BMU: %02d,%02d",$bmu->[1],$bmu->[2])."  "
+		. "Target: [".join(",",@$target)."]  "
+		;
 		$self->{c}->update;
 		$l->update;
         DoOneEvent(DONT_WAIT);		# be kind and process XEvents if they arise
