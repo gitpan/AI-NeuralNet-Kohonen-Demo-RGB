@@ -1,7 +1,7 @@
 package AI::NeuralNet::Kohonen::Demo::RGB;
 
 use vars qw/$VERSION/;
-$VERSION = 0.121;	# 13 March 2003
+$VERSION = 0.123;	# 13 March 2003; using smoothing
 
 =head1 NAME
 
@@ -166,6 +166,11 @@ sub train { my ($self,$epochs) = (shift,shift);
 		$l->update;
         DoOneEvent(DONT_WAIT);		# be kind and process XEvents if they arise
 	}
+	$label_txt = "Did $self->{t} epochs: now smoothed by "
+		.($self->{smoothing}? $self->{smoothing} : "default amount");
+	$_->smooth;
+#	MainLoop;
+
 	return 1;
 }
 

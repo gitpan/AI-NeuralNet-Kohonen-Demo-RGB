@@ -22,7 +22,7 @@ ok( $_->{input}->[0]->[2],3);
 
 $_ = AI::NeuralNet::Kohonen::Demo::RGB->new(
 	map_dim	=> 39,
-	epochs => 9,
+	epochs => 3,
 	table=>
 "R G B
 1 0 0
@@ -37,7 +37,6 @@ ok( $_->{input}->[0]->[2],0);
 ok( $_->{weight_dim}, 2);
 
 $_->train;
-
 
 $_ = AI::NeuralNet::Kohonen::Demo::RGB->new(
 	display_scale => 10,
